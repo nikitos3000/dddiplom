@@ -10,7 +10,7 @@ class MyLabel(QtWidgets.QLabel):
 
     changeCellFocus = QtCore.pyqtSignal(int)
 
-    currentFocusedCell = None  # Статическая переменная для отслеживания текущей фокусированной клетки
+    currentFocusedCell = None  
 
     def __init__(self, id, bgColor, parent=None):
         super().__init__(parent)
@@ -28,15 +28,13 @@ class MyLabel(QtWidgets.QLabel):
         self.showColorCurrent()
 
     def mousePressEvent(self, evt):
-        # Сбрасываем фокус с текущей клетки, если она есть
         if MyLabel.currentFocusedCell is not None:
             MyLabel.currentFocusedCell.clearCellFocus()
 
-        # Устанавливаем фокус на текущую клетку
         MyLabel.currentFocusedCell = self
         self.setCellFocus()
 
-        # Излучаем сигнал
+
         self.changeCellFocus.emit(self.id)
         super().mousePressEvent(evt)
 
