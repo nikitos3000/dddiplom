@@ -22,6 +22,7 @@ class MyLabel(QtWidgets.QLabel):
             id = 0
         self.id = id
         self.isCellChange = True
+        self.isInvalid = False  # Флаг для некорректной цифры
         self.fontColorCurrent = self.colorBlack
         self.bgColorDefault = bgColor
         self.bgColorCurrent = bgColor
@@ -33,14 +34,14 @@ class MyLabel(QtWidgets.QLabel):
 
         MyLabel.currentFocusedCell = self
         self.setCellFocus()
-
-
         self.changeCellFocus.emit(self.id)
         super().mousePressEvent(evt)
 
     def showColorCurrent(self):
+        """Обновляет стиль ячейки в зависимости от состояния."""
+        color = self.colorRed if self.isInvalid else self.fontColorCurrent
         self.setStyleSheet(
-            f"background-color: {self.bgColorCurrent}; color: {self.fontColorCurrent};"
+            f"background-color: {self.bgColorCurrent}; color: {color};"
         )
 
     def setCellFocus(self):
@@ -51,6 +52,9 @@ class MyLabel(QtWidgets.QLabel):
         self.bgColorCurrent = self.bgColorDefault
         self.showColorCurrent()
 
-    def setNewText(self, text):
+    def setNewText(self, text, is_invalid=False):
+        """Устанавливает текст ячейки и обновляет статус некорректности."""
         if self.isCellChange:
             self.setText(text)
+            self.isInvalid = is_invalid
+            self.showColorCurrent()

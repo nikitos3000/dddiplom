@@ -1,26 +1,45 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from modules.MyLabel import MyLabel
-from modules.gamelogic import SudokuGame  
-
+from modules.gamelogic import SudokuGame
+import time
 
 class Widget(QtWidgets.QWidget):
+    cellSelected = QtCore.pyqtSignal()  
+    gameCompleted = QtCore.pyqtSignal()  
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        
-        # Генерируем начальную игру
+
         self.sudoku_game = SudokuGame()
         self.sudoku_game.fill_board()
+
+        print("Решение текущей головоломки:")
+        self.print_board(self.sudoku_game.board)
+
         self.sudoku_game.remove_numbers()
-        
+
+        self.timer_started = False 
+        self.start_time = None  
+
+        self.timer_label = QtWidgets.QLabel("00:00")
+        self.timer_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.timer_label.setStyleSheet("font-size: 16pt; color: black;")
+
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update_timer)
+        self.elapsed_time = 0
+
         vBoxMain = QtWidgets.QVBoxLayout()
+
+        vBoxMain.addWidget(self.timer_label)
+
         frame1 = QtWidgets.QFrame()
         frame1.setStyleSheet(
             "background-color:#FF5733;border:1px solid #9AA6A7;"
         )
         grid = QtWidgets.QGridLayout()
         grid.setSpacing(0)
-        
 
         idColor = (
             3, 4, 5, 12, 13, 14, 21, 22, 23,
@@ -28,7 +47,7 @@ class Widget(QtWidgets.QWidget):
             33, 34, 35, 42, 43, 44, 51, 52, 53,
             57, 58, 59, 66, 67, 68, 75, 76, 77
         )
-        
+
         self.cells = []
         for i in range(81):
             row, col = divmod(i, 9)
@@ -45,7 +64,7 @@ class Widget(QtWidgets.QWidget):
 
         self.cells[0].setCellFocus()
         self.idCellInFocus = 0
-        
+
         i = 0
         for j in range(9):
             for k in range(9):
@@ -53,7 +72,7 @@ class Widget(QtWidgets.QWidget):
                 i += 1
         frame1.setLayout(grid)
         vBoxMain.addWidget(frame1, alignment=QtCore.Qt.AlignHCenter)
-        
+
         frame2 = QtWidgets.QFrame()
         frame2.setFixedSize(272, 36)
         hbox = QtWidgets.QHBoxLayout()
@@ -83,53 +102,44 @@ class Widget(QtWidgets.QWidget):
         vBoxMain.addWidget(frame2, alignment=QtCore.Qt.AlignHCenter)
         self.setLayout(vBoxMain)
 
+    def print_board(self, board):
+        for row in board:
+            print(" ".join(str(num) if num != 0 else '.' for num in row))
+
     def onChangeCellFocus(self, id):
         if self.idCellInFocus != id and not (id < 0 or id > 80):
+            if not self.timer_started:  
+                self.cellSelected.emit()
+                self.start_time = time.time()  
+                self.timer.start(1000)  
+                self.timer_started = True
             self.cells[self.idCellInFocus].clearCellFocus()
             self.idCellInFocus = id
             self.cells[id].setCellFocus()
-
-    def keyPressEvent(self, evt):
-        key = evt.key()
-        if key == QtCore.Qt.Key_Up:
-            tid = self.idCellInFocus - 9
-            if tid < 0:
-                tid += 81
-            self.onChangeCellFocus(tid)
-        elif key == QtCore.Qt.Key_Down:
-            tid = self.idCellInFocus + 9
-            if tid > 80:
-                tid -= 81
-            self.onChangeCellFocus(tid)
-        elif key == QtCore.Qt.Key_Left:
-            tid = self.idCellInFocus - 1
-            if tid < 0:
-                tid += 81
-            self.onChangeCellFocus(tid)
-        elif key >= QtCore.Qt.Key_1 and key <= QtCore.Qt.Key_9:
-            self.updateCell(chr(key))
-        elif (
-            key == QtCore.Qt.Key_Delete
-            or key == QtCore.Qt.Key_Backspace
-            or key == QtCore.Qt.Key_Space
-        ):
-            self.updateCell("")
-        QtWidgets.QWidget.keyPressEvent(self, evt)
 
     def updateCell(self, text):
         row, col = divmod(self.idCellInFocus, 9)
         if text and not text.isdigit():
             return
         num = int(text) if text else 0
-        if num != 0 and not self.sudoku_game.is_valid(self.sudoku_game.board, row, col, num):
-            self.cells[self.idCellInFocus].setStyleSheet(
-                f"background-color: {self.cells[self.idCellInFocus].bgColorDefault}; color: {MyLabel.colorRed};"
-            )
-        else:
-            self.cells[self.idCellInFocus].setStyleSheet(
-                f"background-color: {self.cells[self.idCellInFocus].bgColorDefault}; color: {MyLabel.colorBlack};"
-            )
-        self.cells[self.idCellInFocus].setNewText(text)
+
+
+        is_invalid = num != 0 and not self.sudoku_game.is_valid(
+            self.sudoku_game.board, row, col, num
+        )
+        self.sudoku_game.board[row][col] = num
+        self.cells[self.idCellInFocus].setNewText(text, is_invalid)
+
+
+        if all(cell.text() for cell in self.cells):
+            if self.sudoku_game.is_completed_correctly():
+                self.on_game_completed()
+            else:
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    "Ошибка",
+                    "Решение игры неправильное. Перепроверьте своё решение.",
+                )
 
     def onBtn0Clicked(self): 
         self.updateCell("1")
@@ -154,9 +164,26 @@ class Widget(QtWidgets.QWidget):
 
     def onBtn7Clicked(self): 
         self.updateCell("8")
-    
+
     def onBtn8Clicked(self): 
         self.updateCell("9")
-    
+
     def onBtnXClicked(self): 
         self.updateCell("")
+
+    def update_timer(self):
+        if self.start_time:
+            elapsed = int(time.time() - self.start_time + self.elapsed_time)
+            minutes = elapsed // 60
+            seconds = elapsed % 60
+            self.timer_label.setText(f"{minutes:02}:{seconds:02}")
+
+    def on_game_completed(self):
+        self.timer.stop()
+        elapsed_time = int(time.time() - self.start_time + self.elapsed_time)
+        minutes = elapsed_time // 60
+        seconds = elapsed_time % 60
+        QtWidgets.QMessageBox.information(
+            self, "Поздравляем!", f"Игра завершена! Время: {minutes:02}:{seconds:02}"
+        )
+
