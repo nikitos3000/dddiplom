@@ -1,96 +1,185 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from modules.Field import Widget
-import sys
-import os
+from modules.gamelogic import SudokuGame
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, parent=None):
-        super().__init__(
-            parent,
-            flags=QtCore.Qt.Window | QtCore.Qt.MSWindowsFixedSizeDialogHint
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Судоку")
+        self.setGeometry(100, 100, 800, 600)
+
+        self.central_widget = QtWidgets.QStackedWidget()
+        self.setCentralWidget(self.central_widget)
+
+        self.game_widget = self.create_game_widget()
+        self.menu_widget = self.create_menu_widget()
+        self.settings_widget = self.create_settings_widget()
+
+        self.central_widget.addWidget(self.game_widget)
+        self.central_widget.addWidget(self.menu_widget)
+        self.central_widget.addWidget(self.settings_widget)
+
+        self.apply_theme("light")  # Установка светлой темы по умолчанию
+        self.num_holes = 50  # Сложность по умолчанию
+
+    def create_game_widget(self):
+        """Создаёт виджет игрового поля."""
+        game_widget = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(game_widget)
+
+        self.sudoku_field = Widget()  # Используем вашу доску
+
+        new_game_button = QtWidgets.QPushButton("Новая игра")
+        menu_button = QtWidgets.QPushButton("Меню")
+
+        new_game_button.setMinimumSize(150, 50)
+        menu_button.setMinimumSize(150, 50)
+
+        layout.addWidget(self.sudoku_field)
+        layout.addSpacing(20)
+        layout.addWidget(new_game_button, alignment=QtCore.Qt.AlignCenter)
+        layout.addSpacing(10)
+        layout.addWidget(menu_button, alignment=QtCore.Qt.AlignCenter)
+
+        new_game_button.clicked.connect(self.start_new_game)
+        menu_button.clicked.connect(self.switch_to_menu)
+
+        return game_widget
+
+    def create_menu_widget(self):
+        """Создаёт виджет меню."""
+        menu_widget = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(menu_widget)
+        layout.setAlignment(QtCore.Qt.AlignCenter)
+
+        back_button = QtWidgets.QPushButton("Назад")
+        about_button = QtWidgets.QPushButton("Об игре")
+        settings_button = QtWidgets.QPushButton("Настройки")
+
+        back_button.setMinimumSize(150, 50)
+        about_button.setMinimumSize(150, 50)
+        settings_button.setMinimumSize(150, 50)
+
+        layout.addSpacing(20)
+        layout.addWidget(back_button, alignment=QtCore.Qt.AlignCenter)
+        layout.addSpacing(10)
+        layout.addWidget(about_button, alignment=QtCore.Qt.AlignCenter)
+        layout.addSpacing(10)
+        layout.addWidget(settings_button, alignment=QtCore.Qt.AlignCenter)
+
+        back_button.clicked.connect(self.switch_to_game)
+        about_button.clicked.connect(self.show_about)
+        settings_button.clicked.connect(self.switch_to_settings)
+
+        return menu_widget
+
+    def create_settings_widget(self):
+        """Создаёт виджет настроек."""
+        settings_widget = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(settings_widget)
+        layout.setAlignment(QtCore.Qt.AlignCenter)
+
+        theme_label = QtWidgets.QLabel("Выберите тему:")
+        theme_label.setAlignment(QtCore.Qt.AlignCenter)
+        theme_label.setStyleSheet("font-size: 16pt;")
+
+        light_theme_button = QtWidgets.QPushButton("Светлая тема")
+        dark_theme_button = QtWidgets.QPushButton("Тёмная тема")
+
+        light_theme_button.setMinimumSize(150, 50)
+        dark_theme_button.setMinimumSize(150, 50)
+
+        back_button = QtWidgets.QPushButton("Назад")
+        back_button.setMinimumSize(150, 50)
+
+        layout.addWidget(theme_label)
+        layout.addSpacing(20)
+        layout.addWidget(light_theme_button)
+        layout.addSpacing(10)
+        layout.addWidget(dark_theme_button)
+        layout.addSpacing(20)
+        layout.addWidget(back_button)
+
+        light_theme_button.clicked.connect(lambda: self.apply_theme("light"))
+        dark_theme_button.clicked.connect(lambda: self.apply_theme("dark"))
+        back_button.clicked.connect(self.switch_to_menu)
+
+        return settings_widget
+
+    def switch_to_game(self):
+        """Переключается на виджет игры."""
+        if not hasattr(self, 'game_widget') or not self.game_widget:
+            self.game_widget = self.create_game_widget()
+            self.central_widget.addWidget(self.game_widget)
+        self.central_widget.setCurrentWidget(self.game_widget)
+
+    def switch_to_menu(self):
+        """Переключается на виджет меню."""
+        self.central_widget.setCurrentWidget(self.menu_widget)
+
+    def switch_to_settings(self):
+        """Переключается на виджет настроек."""
+        self.central_widget.setCurrentWidget(self.settings_widget)
+
+    def show_about(self):
+        QtWidgets.QMessageBox.information(self, "Об игре", "Это приложение для игры в Судоку 9x9.")
+
+    def start_new_game(self):
+        """Показывает диалог выбора сложности и запускает новую игру."""
+        difficulty, ok = QtWidgets.QInputDialog.getItem(
+            self,
+            "Выбор сложности",
+            "Выберите уровень сложности:",
+            ["Легкий", "Средний", "Сложный"],
+            0,  # Индекс выбранного элемента по умолчанию
+            False  # Запретить редактирование текста
         )
-        self.setWindowTitle("Судоку 2.0.0")
-        self.setStyleSheet(
-            """
-            QMainWindow {
-                background-color: #DFFFD6;
-            }
-            QFrame QPushButton {
-                font-size: 10pt;
-                font-family: Verdana;
-                color: black;
-                font-weight: bold;
-            }
-            MyLabel {
-                font-size: 14pt;
-                font-family: Verdana;
-                border: 1px solid #9AA6A7;
-            }
-            """
-        )
 
-        self.time_elapsed = 0  
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update_timer)
+        if ok and difficulty:
+            self.apply_difficulty(difficulty)
+            self.restart_game()
 
-        self.settings = QtCore.QSettings("Sudoku")
-        self.sudoku = Widget()
-        self.setCentralWidget(self.sudoku)
+    def apply_difficulty(self, difficulty):
+        """Применяет выбранную сложность."""
+        if difficulty == "Легкий":
+            self.num_holes = 30  # Меньше удаленных чисел
+        elif difficulty == "Средний":
+            self.num_holes = 50  # Среднее количество удаленных чисел
+        elif difficulty == "Сложный":
+            self.num_holes = 70  # Больше удаленных чисел
 
-        
-        self.sudoku.cellSelected.connect(self.start_timer)
-        self.sudoku.gameCompleted.connect(self.stop_timer)
+    def restart_game(self):
+        """Перезапускает игру с новой сложностью."""
+        # Удаляем старый виджет игрового поля
+        if hasattr(self, 'game_widget') and self.game_widget:
+            self.central_widget.removeWidget(self.game_widget)
+            self.game_widget.deleteLater()
+            self.game_widget = None
 
-        buttonContainer = QtWidgets.QWidget()
-        buttonLayout = QtWidgets.QHBoxLayout(buttonContainer)
+        # Создаем новый виджет игрового поля
+        self.game_widget = self.create_game_widget()
+        self.central_widget.addWidget(self.game_widget)
+        self.central_widget.setCurrentWidget(self.game_widget)
 
-        self.newGameButton = QtWidgets.QPushButton("Новая игра")
-        self.menuButton = QtWidgets.QPushButton("Меню")
+        # Обновляем доску с новой сложностью
+        self.sudoku_field.restart_game(self.num_holes)
 
-        self.newGameButton.setMinimumSize(200, 60)
-        self.menuButton.setMinimumSize(200, 60)
-
-        buttonLayout.addWidget(self.newGameButton)
-        buttonLayout.addStretch()
-        buttonLayout.addWidget(self.menuButton)
-
-        mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.addWidget(self.sudoku)
-        mainLayout.addWidget(buttonContainer)
-
-        centralWidget = QtWidgets.QWidget()
-        centralWidget.setLayout(mainLayout)
-        self.setCentralWidget(centralWidget)
-
-        statusBar = self.statusBar()
-        statusBar.setSizeGripEnabled(False)
-        statusBar.showMessage("\"Судоку\" приветствует вас", 20000)
-        if self.settings.contains("X") and self.settings.contains("Y"):
-            self.move(self.settings.value("X"), self.settings.value("Y"))
-
-        self.newGameButton.clicked.connect(self.restart_application)
-
-    def update_timer(self):
-        self.time_elapsed += 1
-
-    def start_timer(self):
-        if not self.timer.isActive():
-            self.time_elapsed = 0
-            self.timer.start(1000)
-
-    def stop_timer(self):
-        if self.timer.isActive():
-            self.timer.stop()
-            minutes, seconds = divmod(self.time_elapsed, 60)
-            message = f"Поздравляем! Вы завершили игру за {minutes:02}:{seconds:02}."
-            QtWidgets.QMessageBox.information(self, "Игра завершена", message)
-
-    def restart_application(self):
-        QtWidgets.QApplication.quit()
-        os.execl(sys.executable, sys.executable, *sys.argv)
-
-    def closeEvent(self, event):
-        self.settings.setValue("X", self.x())
-        self.settings.setValue("Y", self.y())
-        event.accept()
+    def apply_theme(self, theme):
+        if theme == "light":
+            self.setStyleSheet(
+                """
+                QMainWindow { background-color: #FFFFFF; }
+                QPushButton { background-color: #4CAF50; color: white; }
+                QLabel { color: #333333; }
+                """
+            )
+        elif theme == "dark":
+            self.setStyleSheet(
+                """
+                QMainWindow { background-color: #2E2E2E; }
+                QPushButton { background-color: #444444; color: white; }
+                QLabel { color: #FFFFFF; }
+                """
+            )

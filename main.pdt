@@ -1,0 +1,13 @@
+version = 0
+sysroot = ""
+sysroots_dir = ""
+parts = []
+
+[Application]
+entry_point = ""
+is_console = true
+is_bundle = true
+name = ""
+qmake_configuration = ""
+script = ""
+syspath = ""

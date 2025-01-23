@@ -3,9 +3,10 @@ from modules.MyLabel import MyLabel
 from modules.gamelogic import SudokuGame
 import time
 
+
 class Widget(QtWidgets.QWidget):
-    cellSelected = QtCore.pyqtSignal()  
-    gameCompleted = QtCore.pyqtSignal()  
+    cellSelected = QtCore.pyqtSignal()
+    gameCompleted = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -19,8 +20,8 @@ class Widget(QtWidgets.QWidget):
 
         self.sudoku_game.remove_numbers()
 
-        self.timer_started = False 
-        self.start_time = None  
+        self.timer_started = False
+        self.start_time = None
 
         self.timer_label = QtWidgets.QLabel("00:00")
         self.timer_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -58,8 +59,8 @@ class Widget(QtWidgets.QWidget):
             value = self.sudoku_game.board[row][col]
             if value != 0:
                 cell.setText(str(value))
-            else:
-                cell.changeCellFocus.connect(self.onChangeCellFocus)
+                cell.set_editable(False)  # Ячейка с начальным значением не редактируемая
+            cell.changeCellFocus.connect(self.onChangeCellFocus)
             self.cells.append(cell)
 
         self.cells[0].setCellFocus()
@@ -74,17 +75,17 @@ class Widget(QtWidgets.QWidget):
         vBoxMain.addWidget(frame1, alignment=QtCore.Qt.AlignHCenter)
 
         frame2 = QtWidgets.QFrame()
-        frame2.setFixedSize(272, 36)
+        frame2.setFixedSize(400, 150)
         hbox = QtWidgets.QHBoxLayout()
         hbox.setSpacing(1)
         btns = []
         for i in range(1, 10):
             btn = QtWidgets.QPushButton(str(i))
-            btn.setFixedSize(27, 27)
+            btn.setFixedSize(35, 60)
             btn.setFocusPolicy(QtCore.Qt.NoFocus)
             btns.append(btn)
         btn = QtWidgets.QPushButton("X")
-        btn.setFixedSize(27, 27)
+        btn.setFixedSize(35, 60)
         btns.append(btn)
         for btn in btns:
             hbox.addWidget(btn)
@@ -108,10 +109,10 @@ class Widget(QtWidgets.QWidget):
 
     def onChangeCellFocus(self, id):
         if self.idCellInFocus != id and not (id < 0 or id > 80):
-            if not self.timer_started:  
+            if not self.timer_started:
                 self.cellSelected.emit()
-                self.start_time = time.time()  
-                self.timer.start(1000)  
+                self.start_time = time.time()
+                self.timer.start(1000)
                 self.timer_started = True
             self.cells[self.idCellInFocus].clearCellFocus()
             self.idCellInFocus = id
@@ -119,17 +120,18 @@ class Widget(QtWidgets.QWidget):
 
     def updateCell(self, text):
         row, col = divmod(self.idCellInFocus, 9)
+        if not self.cells[self.idCellInFocus].is_editable:
+            return  # Если ячейка не редактируемая, ничего не делаем
+
         if text and not text.isdigit():
             return
         num = int(text) if text else 0
-
 
         is_invalid = num != 0 and not self.sudoku_game.is_valid(
             self.sudoku_game.board, row, col, num
         )
         self.sudoku_game.board[row][col] = num
         self.cells[self.idCellInFocus].setNewText(text, is_invalid)
-
 
         if all(cell.text() for cell in self.cells):
             if self.sudoku_game.is_completed_correctly():
@@ -141,35 +143,36 @@ class Widget(QtWidgets.QWidget):
                     "Решение игры неправильное. Перепроверьте своё решение.",
                 )
 
-    def onBtn0Clicked(self): 
+    def onBtn0Clicked(self):
         self.updateCell("1")
 
-    def onBtn1Clicked(self): 
+    def onBtn1Clicked(self):
         self.updateCell("2")
 
-    def onBtn2Clicked(self): 
+    def onBtn2Clicked(self):
         self.updateCell("3")
 
-    def onBtn3Clicked(self): 
+    def onBtn3Clicked(self):
         self.updateCell("4")
 
-    def onBtn4Clicked(self): 
+    def onBtn4Clicked(self):
         self.updateCell("5")
 
-    def onBtn5Clicked(self): 
+    def onBtn5Clicked(self):
         self.updateCell("6")
 
-    def onBtn6Clicked(self): 
+    def onBtn6Clicked(self):
         self.updateCell("7")
 
-    def onBtn7Clicked(self): 
+    def onBtn7Clicked(self):
         self.updateCell("8")
 
-    def onBtn8Clicked(self): 
+    def onBtn8Clicked(self):
         self.updateCell("9")
 
-    def onBtnXClicked(self): 
-        self.updateCell("")
+    def onBtnXClicked(self):
+        if self.cells[self.idCellInFocus].is_editable:
+            self.updateCell("")
 
     def update_timer(self):
         if self.start_time:
@@ -187,3 +190,32 @@ class Widget(QtWidgets.QWidget):
             self, "Поздравляем!", f"Игра завершена! Время: {minutes:02}:{seconds:02}"
         )
 
+    def update_board(self):
+        """Обновляет отображение доски."""
+        for i in range(81):
+            row, col = divmod(i, 9)
+            value = self.sudoku_game.board[row][col]
+            if value != 0:
+                self.cells[i].setText(str(value))
+            else:
+                self.cells[i].setText("")
+
+    def reset_cells(self):
+        """Сбрасывает все ячейки и обновляет их состояние."""
+        for i in range(81):
+            row, col = divmod(i, 9)
+            value = self.sudoku_game.board[row][col]
+            self.cells[i].setText(str(value) if value != 0 else "")
+            self.cells[i].set_editable(value == 0)  # Блокируем начальные ячейки
+            self.cells[i].isInvalid = False
+            self.cells[i].showColorCurrent()
+
+    def restart_game(self, num_holes):
+        """Перезапускает игру с новой сложностью."""
+        self.sudoku_game = SudokuGame()
+        self.sudoku_game.fill_board()
+        self.sudoku_game.remove_numbers(num_holes)
+        self.reset_cells()  # Сбрасываем ячейки
+        self.timer_started = False
+        self.start_time = None
+        self.timer_label.setText("00:00")

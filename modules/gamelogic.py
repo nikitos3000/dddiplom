@@ -1,5 +1,6 @@
 import random
 
+
 class SudokuGame:
     def __init__(self):
         self.board = [[0] * 9 for _ in range(9)]
@@ -35,6 +36,7 @@ class SudokuGame:
         solve()
 
     def remove_numbers(self, num_holes=50):
+        """Удаляет числа с доски в зависимости от сложности."""
         count = 0
         while count < num_holes:
             row = random.randint(0, 8)

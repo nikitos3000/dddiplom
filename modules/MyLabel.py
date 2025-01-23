@@ -10,7 +10,7 @@ class MyLabel(QtWidgets.QLabel):
 
     changeCellFocus = QtCore.pyqtSignal(int)
 
-    currentFocusedCell = None  
+    currentFocusedCell = None  # Текущая выделенная ячейка
 
     def __init__(self, id, bgColor, parent=None):
         super().__init__(parent)
@@ -21,16 +21,31 @@ class MyLabel(QtWidgets.QLabel):
         if id < 0 or id > 80:
             id = 0
         self.id = id
-        self.isCellChange = True
-        self.isInvalid = False  # Флаг для некорректной цифры
+        self.isInvalid = False  # Флаг неверного значения
         self.fontColorCurrent = self.colorBlack
         self.bgColorDefault = bgColor
         self.bgColorCurrent = bgColor
+        self.is_editable = True  # По умолчанию ячейка редактируемая
         self.showColorCurrent()
+
+    def set_editable(self, editable):
+        """Устанавливает, можно ли редактировать ячейку."""
+        self.is_editable = editable
+        if not editable:
+            self.setStyleSheet(
+                f"background-color: {self.bgColorCurrent}; color: {self.colorBlack}; font-weight: bold;"
+            )
+        else:
+            self.setStyleSheet(
+                f"background-color: {self.bgColorCurrent}; color: {self.fontColorCurrent};"
+            )
 
     def mousePressEvent(self, evt):
         if MyLabel.currentFocusedCell is not None:
-            MyLabel.currentFocusedCell.clearCellFocus()
+            try:
+                MyLabel.currentFocusedCell.clearCellFocus()
+            except RuntimeError:  # Если объект был удален
+                MyLabel.currentFocusedCell = None
 
         MyLabel.currentFocusedCell = self
         self.setCellFocus()
@@ -38,7 +53,6 @@ class MyLabel(QtWidgets.QLabel):
         super().mousePressEvent(evt)
 
     def showColorCurrent(self):
-        """Обновляет стиль ячейки в зависимости от состояния."""
         color = self.colorRed if self.isInvalid else self.fontColorCurrent
         self.setStyleSheet(
             f"background-color: {self.bgColorCurrent}; color: {color};"
@@ -53,8 +67,7 @@ class MyLabel(QtWidgets.QLabel):
         self.showColorCurrent()
 
     def setNewText(self, text, is_invalid=False):
-        """Устанавливает текст ячейки и обновляет статус некорректности."""
-        if self.isCellChange:
-            self.setText(text)
-            self.isInvalid = is_invalid
-            self.showColorCurrent()
+        """Устанавливает новый текст в ячейке."""
+        self.setText(text)
+        self.isInvalid = is_invalid
+        self.showColorCurrent()
