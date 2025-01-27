@@ -10,7 +10,7 @@ class MyLabel(QtWidgets.QLabel):
 
     changeCellFocus = QtCore.pyqtSignal(int)
 
-    currentFocusedCell = None  # Текущая выделенная ячейка
+    currentFocusedCell = None  
 
     def __init__(self, id, bgColor, parent=None):
         super().__init__(parent)
@@ -21,15 +21,14 @@ class MyLabel(QtWidgets.QLabel):
         if id < 0 or id > 80:
             id = 0
         self.id = id
-        self.isInvalid = False  # Флаг неверного значения
+        self.isInvalid = False  
         self.fontColorCurrent = self.colorBlack
         self.bgColorDefault = bgColor
         self.bgColorCurrent = bgColor
-        self.is_editable = True  # По умолчанию ячейка редактируемая
+        self.is_editable = True  
         self.showColorCurrent()
 
     def set_editable(self, editable):
-        """Устанавливает, можно ли редактировать ячейку."""
         self.is_editable = editable
         if not editable:
             self.setStyleSheet(
@@ -44,7 +43,7 @@ class MyLabel(QtWidgets.QLabel):
         if MyLabel.currentFocusedCell is not None:
             try:
                 MyLabel.currentFocusedCell.clearCellFocus()
-            except RuntimeError:  # Если объект был удален
+            except RuntimeError: 
                 MyLabel.currentFocusedCell = None
 
         MyLabel.currentFocusedCell = self
@@ -67,7 +66,6 @@ class MyLabel(QtWidgets.QLabel):
         self.showColorCurrent()
 
     def setNewText(self, text, is_invalid=False):
-        """Устанавливает новый текст в ячейке."""
         self.setText(text)
         self.isInvalid = is_invalid
         self.showColorCurrent()

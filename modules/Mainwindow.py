@@ -21,15 +21,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.central_widget.addWidget(self.menu_widget)
         self.central_widget.addWidget(self.settings_widget)
 
-        self.apply_theme("light")  # Установка светлой темы по умолчанию
-        self.num_holes = 50  # Сложность по умолчанию
+        self.apply_theme("light")  
+        self.num_holes = 50  
 
     def create_game_widget(self):
-        """Создаёт виджет игрового поля."""
         game_widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(game_widget)
 
-        self.sudoku_field = Widget()  # Используем вашу доску
+        self.sudoku_field = Widget()  
 
         new_game_button = QtWidgets.QPushButton("Новая игра")
         menu_button = QtWidgets.QPushButton("Меню")
@@ -49,7 +48,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return game_widget
 
     def create_menu_widget(self):
-        """Создаёт виджет меню."""
         menu_widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(menu_widget)
         layout.setAlignment(QtCore.Qt.AlignCenter)
@@ -76,7 +74,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return menu_widget
 
     def create_settings_widget(self):
-        """Создаёт виджет настроек."""
         settings_widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(settings_widget)
         layout.setAlignment(QtCore.Qt.AlignCenter)
@@ -109,32 +106,28 @@ class MainWindow(QtWidgets.QMainWindow):
         return settings_widget
 
     def switch_to_game(self):
-        """Переключается на виджет игры."""
         if not hasattr(self, 'game_widget') or not self.game_widget:
             self.game_widget = self.create_game_widget()
             self.central_widget.addWidget(self.game_widget)
         self.central_widget.setCurrentWidget(self.game_widget)
 
     def switch_to_menu(self):
-        """Переключается на виджет меню."""
         self.central_widget.setCurrentWidget(self.menu_widget)
 
     def switch_to_settings(self):
-        """Переключается на виджет настроек."""
         self.central_widget.setCurrentWidget(self.settings_widget)
 
     def show_about(self):
         QtWidgets.QMessageBox.information(self, "Об игре", "Это приложение для игры в Судоку 9x9.")
 
     def start_new_game(self):
-        """Показывает диалог выбора сложности и запускает новую игру."""
         difficulty, ok = QtWidgets.QInputDialog.getItem(
             self,
             "Выбор сложности",
             "Выберите уровень сложности:",
             ["Легкий", "Средний", "Сложный"],
-            0,  # Индекс выбранного элемента по умолчанию
-            False  # Запретить редактирование текста
+            0,  
+            False  
         )
 
         if ok and difficulty:
@@ -142,28 +135,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self.restart_game()
 
     def apply_difficulty(self, difficulty):
-        """Применяет выбранную сложность."""
         if difficulty == "Легкий":
-            self.num_holes = 30  # Меньше удаленных чисел
+            self.num_holes = 30  
         elif difficulty == "Средний":
-            self.num_holes = 50  # Среднее количество удаленных чисел
+            self.num_holes = 50  
         elif difficulty == "Сложный":
-            self.num_holes = 70  # Больше удаленных чисел
+            self.num_holes = 70  
 
     def restart_game(self):
-        """Перезапускает игру с новой сложностью."""
-        # Удаляем старый виджет игрового поля
         if hasattr(self, 'game_widget') and self.game_widget:
             self.central_widget.removeWidget(self.game_widget)
             self.game_widget.deleteLater()
             self.game_widget = None
 
-        # Создаем новый виджет игрового поля
         self.game_widget = self.create_game_widget()
         self.central_widget.addWidget(self.game_widget)
         self.central_widget.setCurrentWidget(self.game_widget)
 
-        # Обновляем доску с новой сложностью
+
         self.sudoku_field.restart_game(self.num_holes)
 
     def apply_theme(self, theme):

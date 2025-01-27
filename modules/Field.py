@@ -59,7 +59,7 @@ class Widget(QtWidgets.QWidget):
             value = self.sudoku_game.board[row][col]
             if value != 0:
                 cell.setText(str(value))
-                cell.set_editable(False)  # Ячейка с начальным значением не редактируемая
+                cell.set_editable(False) 
             cell.changeCellFocus.connect(self.onChangeCellFocus)
             self.cells.append(cell)
 
@@ -121,7 +121,7 @@ class Widget(QtWidgets.QWidget):
     def updateCell(self, text):
         row, col = divmod(self.idCellInFocus, 9)
         if not self.cells[self.idCellInFocus].is_editable:
-            return  # Если ячейка не редактируемая, ничего не делаем
+            return  
 
         if text and not text.isdigit():
             return
@@ -191,7 +191,6 @@ class Widget(QtWidgets.QWidget):
         )
 
     def update_board(self):
-        """Обновляет отображение доски."""
         for i in range(81):
             row, col = divmod(i, 9)
             value = self.sudoku_game.board[row][col]
@@ -201,21 +200,19 @@ class Widget(QtWidgets.QWidget):
                 self.cells[i].setText("")
 
     def reset_cells(self):
-        """Сбрасывает все ячейки и обновляет их состояние."""
         for i in range(81):
             row, col = divmod(i, 9)
             value = self.sudoku_game.board[row][col]
             self.cells[i].setText(str(value) if value != 0 else "")
-            self.cells[i].set_editable(value == 0)  # Блокируем начальные ячейки
+            self.cells[i].set_editable(value == 0)  
             self.cells[i].isInvalid = False
             self.cells[i].showColorCurrent()
 
     def restart_game(self, num_holes):
-        """Перезапускает игру с новой сложностью."""
         self.sudoku_game = SudokuGame()
         self.sudoku_game.fill_board()
         self.sudoku_game.remove_numbers(num_holes)
-        self.reset_cells()  # Сбрасываем ячейки
+        self.reset_cells()  
         self.timer_started = False
         self.start_time = None
         self.timer_label.setText("00:00")

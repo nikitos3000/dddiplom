@@ -36,7 +36,6 @@ class SudokuGame:
         solve()
 
     def remove_numbers(self, num_holes=50):
-        """Удаляет числа с доски в зависимости от сложности."""
         count = 0
         while count < num_holes:
             row = random.randint(0, 8)
