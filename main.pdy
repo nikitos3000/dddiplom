@@ -20,7 +20,6 @@
         <module name="json" />
     </modules>
     <resources>
-        <!-- Если у вас нет ресурсов, этот раздел можно оставить пустым -->
     </resources>
     <build>
         <build_directory>C:\Users\Никита\Desktop\зн</build_directory>

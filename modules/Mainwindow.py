@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
 from modules.Field import Widget
 from modules.gamelogic import SudokuGame
+import json
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -16,19 +17,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.game_widget = self.create_game_widget()
         self.menu_widget = self.create_menu_widget()
         self.settings_widget = self.create_settings_widget()
+        self.results_widget = self.create_results_widget()
 
         self.central_widget.addWidget(self.game_widget)
         self.central_widget.addWidget(self.menu_widget)
         self.central_widget.addWidget(self.settings_widget)
+        self.central_widget.addWidget(self.results_widget)
 
-        self.apply_theme("light")  
-        self.num_holes = 50  
+        self.apply_theme("light")
+        self.num_holes = 50
 
     def create_game_widget(self):
         game_widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(game_widget)
 
-        self.sudoku_field = Widget()  
+        self.sudoku_field = Widget()
 
         new_game_button = QtWidgets.QPushButton("Новая игра")
         menu_button = QtWidgets.QPushButton("Меню")
@@ -55,10 +58,12 @@ class MainWindow(QtWidgets.QMainWindow):
         back_button = QtWidgets.QPushButton("Назад")
         about_button = QtWidgets.QPushButton("Об игре")
         settings_button = QtWidgets.QPushButton("Настройки")
+        results_button = QtWidgets.QPushButton("Результаты")
 
         back_button.setMinimumSize(150, 50)
         about_button.setMinimumSize(150, 50)
         settings_button.setMinimumSize(150, 50)
+        results_button.setMinimumSize(150, 50)
 
         layout.addSpacing(20)
         layout.addWidget(back_button, alignment=QtCore.Qt.AlignCenter)
@@ -66,10 +71,13 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(about_button, alignment=QtCore.Qt.AlignCenter)
         layout.addSpacing(10)
         layout.addWidget(settings_button, alignment=QtCore.Qt.AlignCenter)
+        layout.addSpacing(10)
+        layout.addWidget(results_button, alignment=QtCore.Qt.AlignCenter)
 
         back_button.clicked.connect(self.switch_to_game)
         about_button.clicked.connect(self.show_about)
         settings_button.clicked.connect(self.switch_to_settings)
+        results_button.clicked.connect(self.switch_to_results)
 
         return menu_widget
 
@@ -105,10 +113,26 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return settings_widget
 
+    def create_results_widget(self):
+        results_widget = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(results_widget)
+        layout.setAlignment(QtCore.Qt.AlignCenter)
+
+        results_label = QtWidgets.QLabel("Результаты:")
+        results_label.setStyleSheet("font-size: 16pt;")
+        layout.addWidget(results_label)
+
+        self.results_list = QtWidgets.QListWidget()
+        layout.addWidget(self.results_list)
+
+        back_button = QtWidgets.QPushButton("Назад")
+        back_button.setMinimumSize(150, 50)
+        back_button.clicked.connect(self.switch_to_menu)
+        layout.addWidget(back_button)
+
+        return results_widget
+
     def switch_to_game(self):
-        if not hasattr(self, 'game_widget') or not self.game_widget:
-            self.game_widget = self.create_game_widget()
-            self.central_widget.addWidget(self.game_widget)
         self.central_widget.setCurrentWidget(self.game_widget)
 
     def switch_to_menu(self):
@@ -116,6 +140,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def switch_to_settings(self):
         self.central_widget.setCurrentWidget(self.settings_widget)
+
+    def switch_to_results(self):
+        self.load_results()
+        self.central_widget.setCurrentWidget(self.results_widget)
+
+    def load_results(self):
+        self.results_list.clear()
+        try:
+            with open("results.json", "r") as file:
+                results = json.load(file)
+                results.sort(key=lambda x: int(x['time'].split(':')[0]) * 60 + int(x['time'].split(':')[1]))
+                for result in results:
+                    self.results_list.addItem(f"{result['name']}: {result['time']}")
+        except (FileNotFoundError, json.JSONDecodeError):
+            self.results_list.addItem("Результатов пока нет.")
 
     def show_about(self):
         QtWidgets.QMessageBox.information(self, "Об игре", "Это приложение для игры в Судоку 9x9.")
@@ -126,8 +165,8 @@ class MainWindow(QtWidgets.QMainWindow):
             "Выбор сложности",
             "Выберите уровень сложности:",
             ["Легкий", "Средний", "Сложный"],
-            0,  
-            False  
+            0,
+            False
         )
 
         if ok and difficulty:
@@ -136,24 +175,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def apply_difficulty(self, difficulty):
         if difficulty == "Легкий":
-            self.num_holes = 30  
+            self.num_holes = 30
         elif difficulty == "Средний":
-            self.num_holes = 50  
+            self.num_holes = 50
         elif difficulty == "Сложный":
-            self.num_holes = 70  
+            self.num_holes = 70
 
     def restart_game(self):
-        if hasattr(self, 'game_widget') and self.game_widget:
-            self.central_widget.removeWidget(self.game_widget)
-            self.game_widget.deleteLater()
-            self.game_widget = None
-
-        self.game_widget = self.create_game_widget()
-        self.central_widget.addWidget(self.game_widget)
-        self.central_widget.setCurrentWidget(self.game_widget)
-
-
         self.sudoku_field.restart_game(self.num_holes)
+        self.central_widget.setCurrentWidget(self.game_widget)
 
     def apply_theme(self, theme):
         if theme == "light":

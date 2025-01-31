@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from modules.MyLabel import MyLabel
 from modules.gamelogic import SudokuGame
 import time
+import json
 
 
 class Widget(QtWidgets.QWidget):
@@ -59,7 +60,7 @@ class Widget(QtWidgets.QWidget):
             value = self.sudoku_game.board[row][col]
             if value != 0:
                 cell.setText(str(value))
-                cell.set_editable(False) 
+                cell.set_editable(False)
             cell.changeCellFocus.connect(self.onChangeCellFocus)
             self.cells.append(cell)
 
@@ -89,15 +90,15 @@ class Widget(QtWidgets.QWidget):
         btns.append(btn)
         for btn in btns:
             hbox.addWidget(btn)
-        btns[0].clicked.connect(self.onBtn0Clicked)
-        btns[1].clicked.connect(self.onBtn1Clicked)
-        btns[2].clicked.connect(self.onBtn2Clicked)
-        btns[3].clicked.connect(self.onBtn3Clicked)
-        btns[4].clicked.connect(self.onBtn4Clicked)
-        btns[5].clicked.connect(self.onBtn5Clicked)
-        btns[6].clicked.connect(self.onBtn6Clicked)
-        btns[7].clicked.connect(self.onBtn7Clicked)
-        btns[8].clicked.connect(self.onBtn8Clicked)
+        btns[0].clicked.connect(lambda: self.onBtnClicked(1))
+        btns[1].clicked.connect(lambda: self.onBtnClicked(2))
+        btns[2].clicked.connect(lambda: self.onBtnClicked(3))
+        btns[3].clicked.connect(lambda: self.onBtnClicked(4))
+        btns[4].clicked.connect(lambda: self.onBtnClicked(5))
+        btns[5].clicked.connect(lambda: self.onBtnClicked(6))
+        btns[6].clicked.connect(lambda: self.onBtnClicked(7))
+        btns[7].clicked.connect(lambda: self.onBtnClicked(8))
+        btns[8].clicked.connect(lambda: self.onBtnClicked(9))
         btns[9].clicked.connect(self.onBtnXClicked)
         frame2.setLayout(hbox)
         vBoxMain.addWidget(frame2, alignment=QtCore.Qt.AlignHCenter)
@@ -121,9 +122,9 @@ class Widget(QtWidgets.QWidget):
     def updateCell(self, text):
         row, col = divmod(self.idCellInFocus, 9)
         if not self.cells[self.idCellInFocus].is_editable:
-            return  
+            return
 
-        if text and not text.isdigit():
+        if text and (not text.isdigit() or int(text) < 1 or int(text) > 9):
             return
         num = int(text) if text else 0
 
@@ -143,32 +144,8 @@ class Widget(QtWidgets.QWidget):
                     "Решение игры неправильное. Перепроверьте своё решение.",
                 )
 
-    def onBtn0Clicked(self):
-        self.updateCell("1")
-
-    def onBtn1Clicked(self):
-        self.updateCell("2")
-
-    def onBtn2Clicked(self):
-        self.updateCell("3")
-
-    def onBtn3Clicked(self):
-        self.updateCell("4")
-
-    def onBtn4Clicked(self):
-        self.updateCell("5")
-
-    def onBtn5Clicked(self):
-        self.updateCell("6")
-
-    def onBtn6Clicked(self):
-        self.updateCell("7")
-
-    def onBtn7Clicked(self):
-        self.updateCell("8")
-
-    def onBtn8Clicked(self):
-        self.updateCell("9")
+    def onBtnClicked(self, value):
+        self.updateCell(str(value))
 
     def onBtnXClicked(self):
         if self.cells[self.idCellInFocus].is_editable:
@@ -186,9 +163,29 @@ class Widget(QtWidgets.QWidget):
         elapsed_time = int(time.time() - self.start_time + self.elapsed_time)
         minutes = elapsed_time // 60
         seconds = elapsed_time % 60
-        QtWidgets.QMessageBox.information(
-            self, "Поздравляем!", f"Игра завершена! Время: {minutes:02}:{seconds:02}"
+        time_str = f"{minutes:02}:{seconds:02}"
+
+        name, ok = QtWidgets.QInputDialog.getText(
+            self, "Поздравляем!", "Введите ваше имя:"
         )
+
+        if ok and name:
+            self.save_result(name, time_str)
+            QtWidgets.QMessageBox.information(
+                self, "Поздравляем!", f"Игра завершена! Время: {time_str}"
+            )
+
+    def save_result(self, name, time):
+        try:
+            with open("results.json", "r") as file:
+                results = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            results = []
+
+        results.append({"name": name, "time": time})
+
+        with open("results.json", "w") as file:
+            json.dump(results, file, indent=4)
 
     def update_board(self):
         for i in range(81):
@@ -204,7 +201,7 @@ class Widget(QtWidgets.QWidget):
             row, col = divmod(i, 9)
             value = self.sudoku_game.board[row][col]
             self.cells[i].setText(str(value) if value != 0 else "")
-            self.cells[i].set_editable(value == 0)  
+            self.cells[i].set_editable(value == 0)
             self.cells[i].isInvalid = False
             self.cells[i].showColorCurrent()
 
@@ -212,7 +209,7 @@ class Widget(QtWidgets.QWidget):
         self.sudoku_game = SudokuGame()
         self.sudoku_game.fill_board()
         self.sudoku_game.remove_numbers(num_holes)
-        self.reset_cells()  
+        self.reset_cells()
         self.timer_started = False
         self.start_time = None
         self.timer_label.setText("00:00")

@@ -10,7 +10,7 @@ class MyLabel(QtWidgets.QLabel):
 
     changeCellFocus = QtCore.pyqtSignal(int)
 
-    currentFocusedCell = None  
+    currentFocusedCell = None
 
     def __init__(self, id, bgColor, parent=None):
         super().__init__(parent)
@@ -21,11 +21,11 @@ class MyLabel(QtWidgets.QLabel):
         if id < 0 or id > 80:
             id = 0
         self.id = id
-        self.isInvalid = False  
+        self.isInvalid = False
         self.fontColorCurrent = self.colorBlack
         self.bgColorDefault = bgColor
         self.bgColorCurrent = bgColor
-        self.is_editable = True  
+        self.is_editable = True
         self.showColorCurrent()
 
     def set_editable(self, editable):
@@ -43,7 +43,7 @@ class MyLabel(QtWidgets.QLabel):
         if MyLabel.currentFocusedCell is not None:
             try:
                 MyLabel.currentFocusedCell.clearCellFocus()
-            except RuntimeError: 
+            except RuntimeError:
                 MyLabel.currentFocusedCell = None
 
         MyLabel.currentFocusedCell = self
