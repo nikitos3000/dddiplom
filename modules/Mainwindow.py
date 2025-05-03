@@ -1,8 +1,8 @@
 from PyQt5 import QtWidgets, QtCore
-from modules.Field import Widget
-from modules.gamelogic import SudokuGame
+from .Field import Widget
+from .gamelogic import SudokuGame
 import json
-
+from .about import rules
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -157,7 +157,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.results_list.addItem("Результатов пока нет.")
 
     def show_about(self):
-        QtWidgets.QMessageBox.information(self, "Об игре", "Это приложение для игры в Судоку 9x9.")
+        QtWidgets.QMessageBox.information(self, "Об игре", rules)
 
     def start_new_game(self):
         difficulty, ok = QtWidgets.QInputDialog.getItem(

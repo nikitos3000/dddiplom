@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from modules.MyLabel import MyLabel
-from modules.gamelogic import SudokuGame
+from .MyLabel import MyLabel
+from .gamelogic import SudokuGame
 import time
 import json
 
