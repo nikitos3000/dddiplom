@@ -23,7 +23,7 @@ class TestMyLabel(unittest.TestCase):
         self.assertEqual(self.cell.bgColorCurrent, self.cell.bgColorDefault)
     
     def test_focus_handling(self):
-        # Проверяем изменение фокуса
+        
         self.cell.setCellFocus()
         self.assertEqual(self.cell.bgColorCurrent, self.cell.colorYellow)
         
@@ -31,12 +31,11 @@ class TestMyLabel(unittest.TestCase):
         self.assertEqual(self.cell.bgColorCurrent, self.cell.bgColorDefault)
     
     def test_text_update(self):
-        # Проверяем обновление текста
+        
         self.cell.setNewText("5", False)
         self.assertEqual(self.cell.text(), "5")
         self.assertFalse(self.cell.isInvalid)
         
-        # Проверяем отметку невалидного значения
         self.cell.setNewText("5", True)
         self.assertTrue(self.cell.isInvalid)
     
